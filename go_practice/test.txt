@@ -1,0 +1,9 @@
+5
+%!s(int=5)
+%!d(float64=5.3)
+5
+5.300000
+5
+%!d(string=string)
+string
+string
