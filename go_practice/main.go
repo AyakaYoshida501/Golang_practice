@@ -9,6 +9,11 @@ import (
 	"compress/gzip"
 	"io"
 	"net/http"
+
+	"bufio"
+	"strings"
+	"bytes"
+
 )
 /* 問題演習
 ①ファイルに対するフォーマット出力
@@ -114,10 +119,95 @@ func outJSON(w http.ResponseWriter, r *http.Request) {
 
 }
 
+
+//io.Reader練習
+//例題
+var sourse = `1行目
+2行目
+3行目`
+
+//改行で区切る
+func nReader() {
+	reader := bufio.NewReader(strings.NewReader(sourse))
+	for {
+		line, err := reader.ReadString('\n')
+		fmt.Printf("%#v\n", line)
+		if err == io.EOF {
+			break
+		}
+	}
+}
+
+//データ型を指定して解析
+func dataReader() {
+	var sourse = "123 1.234 1.0e4 test"
+	reader := strings.NewReader(sourse)
+	var i int
+	var f, g float64
+	var s string
+	fmt.Fscan(reader, &i, &f, &g, &s) //fmt.Fscan(reader)がデータがスペース区切りである全体
+	fmt.Printf("i=%#v\n f=%#v\n g=%#v\n s=%#v\n", i, f, g, s)
+}
+
+//csv形式を解析
+func csvReader() {
+	var csvSourse = 
+	`13101,"100  ","1000003","ﾄｳｷｮｳﾄ","ﾁﾖﾀﾞｸ","ﾋﾄﾂﾊﾞｼ"(1ﾁｮｳﾒ)","東京都","千代田区","一ツ橋（一丁目）",1,0,1,0,0,0
+	13101,"101  ","1010003","ﾄｳｷｮｳﾄ","ﾁﾖﾀﾞｸ","ﾋﾄﾂﾊﾞｼ"(2ﾁｮｳﾒ)","東京都","千代田区","一ツ橋（二丁目）",1,0,1,0,0,0
+	13101,"100  ","1000012","ﾄｳｷｮｳﾄ","ﾁﾖﾀﾞｸ","ﾋﾋﾞﾔｺｳｴﾝ","東京都","千代田区","日比谷公園",0,0,0,0,0,0
+	13101,"102  ","1000093","ﾄｳｷｮｳﾄ","ﾁﾖﾀﾞｸ","ﾋﾗｶﾜﾁｮｳ","東京都","千代田区","平河町",0,0,1,0,0,0
+	13101,"102  ","1000071","ﾄｳｷｮｳﾄ","ﾁﾖﾀﾞｸ","ﾌｼﾞﾐ","東京都","千代田区","富士見",0,0,1,0,0,0`
+
+	reader := strings.NewReader(csvSourse)
+	csvReader := csv.NewReader(reader)
+	for {
+		line, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		fmt.Println(line[2], line[3:5])
+	}
+}
+
+//io.Readerの全ての入力がつながっているように動作
+func multiReader() {
+	header := bytes.NewBufferString("----HEADER----\n")
+	content := bytes.NewBufferString("Example of io.MultiReader\n")
+	footer := bytes.NewBufferString("----FOOTER----\n")
+
+	reader := io.MultiReader(header, content, footer)
+	io.Copy(os.Stdout, reader)
+}
+
+//問題
+
+/*
+1.ファイルのコピー
+①ファイル準備
+②読み込み
+③コピー
+*/
+func oldNew() {
+	writer, err := os.Create("old.txt")
+	if err != nil {
+		log.Fatalln("file create error:", err)
+	}
+
+	if err := writer.Write("context in old file"); err != nil {
+		log.Fatalln("error writing to old:", err)
+	}
+
+	io.Copy(os.Stdout, writer)
+}
+
 func main() {
 	outFile()
 	outCsv()
 	outStd()
+	nReader()
+	dataReader()
+	csvReader()
+	multiReader()
 	http.HandleFunc("/", outJSON)
 	http.ListenAndServe(":8080", nil)
 }
