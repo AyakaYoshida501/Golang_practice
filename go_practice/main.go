@@ -188,16 +188,32 @@ func multiReader() {
 ③コピー
 */
 func oldNew() {
-	writer, err := os.Create("old.txt")
+	file, err := os.Create("old.txt")
 	if err != nil {
-		log.Fatalln("file create error:", err)
+		log.Fatalln("create old file error:", err)
 	}
 
-	if err := writer.Write("context in old file"); err != nil {
-		log.Fatalln("error writing to old:", err)
+	// if err := file.Write("context in old file"); err != nil { //byte文字列のみ
+	// 	log.Fatalln("error writing to old:", err)
+	// }
+	io.WriteString(file, "context in old file\n")
+
+	// io.Copy(os.Stdout, file) //出力されない
+	//参考	logW := io.MultiWriter(os.Stdout, writer) //標準出力とzipにjson出力
+
+	newFile, err := os.Create("new.txt")
+	if err != nil {
+		log.Fatalln("create new file error:", err)
+	}
+	
+	openFile, err := os.Open("old.txt")
+	if err != nil {
+		log.Fatalln("open file error:", err)
 	}
 
-	io.Copy(os.Stdout, writer)
+	defer openFile.Close()
+	io.Copy(newFile, openFile)
+	
 }
 
 func main() {
@@ -208,6 +224,7 @@ func main() {
 	dataReader()
 	csvReader()
 	multiReader()
+	oldNew()
 	http.HandleFunc("/", outJSON)
 	http.ListenAndServe(":8080", nil)
 }
