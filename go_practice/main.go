@@ -14,6 +14,8 @@ import (
 	"strings"
 	"bytes"
 
+	"crypto/rand"
+
 )
 /* 問題演習
 ①ファイルに対するフォーマット出力
@@ -216,6 +218,29 @@ func oldNew() {
 	
 }
 
+//2.テスト用の適当なサイズのファイルを作成。ファイルを作成してランダムな内容で埋める
+/*
+1 1024バイトの長さのバイナリファイル作成
+2 用意したファイルに書き込み
+👇
+1024バイトのランダムな文字列作成⇒書き込む
+*/
+func randFile() {
+	buffer := make([]byte, 1024) //バッファを準備してる
+	rand.Read(buffer)//指定した長さのバイト配列を生成
+
+	testFile, err := os.Create("test.txt")
+	if err != nil {
+		log.Fatalln("create file error!", err)
+	}
+
+	//openFile := os.openFile("test.txt")//os.openFile(testFile)　※()内はファイル名
+	defer testFile/*openFile*/.Close()
+
+	io.WriteString(testFile/*openFile*/, string(buffer))//io.WriteString(openFile, buffer)
+}
+
+
 func main() {
 	outFile()
 	outCsv()
@@ -225,6 +250,7 @@ func main() {
 	csvReader()
 	multiReader()
 	oldNew()
+	randFile()
 	http.HandleFunc("/", outJSON)
 	http.ListenAndServe(":8080", nil)
 }
