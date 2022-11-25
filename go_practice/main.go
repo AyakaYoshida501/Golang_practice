@@ -16,6 +16,7 @@ import (
 
 	"crypto/rand"
 
+	"archive/zip"
 )
 /* 問題演習
 ①ファイルに対するフォーマット出力
@@ -208,7 +209,7 @@ func oldNew() {
 		log.Fatalln("create new file error:", err)
 	}
 	
-	openFile, err := os.Open("old.txt")
+	openFile, err := os.Open("old.txt") //既存のファイルはopenしないと読み取れない！ createはopenしなくても書き込める！
 	if err != nil {
 		log.Fatalln("open file error:", err)
 	}
@@ -240,7 +241,60 @@ func randFile() {
 	io.WriteString(testFile/*openFile*/, string(buffer))//io.WriteString(openFile, buffer)
 }
 
+// archive/zipパッケージを使ってzipファイルを作成しよう　strings.Readerを使う！
+/*
+参考：実際のファイルを使うver
+1 出力先のファイルのWriterを作る
+2 zip.NewWriter()に渡す　（zipファイル書き込み用の構造体ができる）
+3 ファイルを閉める
+*/
+func zipFile() {
+	file, err := os.Create("zipFile.zip")
+	if err != nil {
+		log.Fatalln("create zip error", err)
+	}
+	zipWriter := zip.NewWriter(file/*"file1.txt"*/)
+	defer zipWriter.Close()
 
+	file1, err := zipWriter.Create("file1")
+	if err != nil {
+		log.Fatalln("create txt error", err)
+	}
+
+	
+	io.Copy(file1/*zipWriter*/, strings.NewReader("context in file1")) //io.Copy is a nice little function that take a reader interface and writer interface
+}
+
+//zipファイルをサーバーからダウンロード
+/*
+1 zipファイルを作成する
+2 ダウンロード関数
+*/
+func downloadZip(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "appliation/zip")
+	w.Header().Set("Content-Desposition", "attachment; filename=downloadFromBrouser.zip")
+
+	downloaded := zip.NewWriter(w)
+	defer downloaded.Close()
+	// zipFile, err := os.Create(downloadFromBrouser.zip)
+	// if err != nil {
+	// 	log.Fatalln("create zip error", err)
+	// }
+	// response, err := http.Get(url)
+	// if err != nil {
+	// 	log.Fatalln("response error", err)
+	// }
+	// defer response.Body.Close()
+
+	// io.Copy(response.Body)
+
+	httpWriter, err := downloaded.Create("download.txt")
+	if err != nil {
+		log.Fatalln("create txt error", err)
+	}
+	// io.Copy(httpWriter, strings.Reader("donwloaded")) //cannot convert "donwloaded" (untyped string constant) to type strings.Reader
+	io.WriteString(httpWriter, "downloaded")
+}
 func main() {
 	outFile()
 	outCsv()
@@ -251,6 +305,8 @@ func main() {
 	multiReader()
 	oldNew()
 	randFile()
+	zipFile() 
 	http.HandleFunc("/", outJSON)
+	http.HandleFunc("/downloadZip", downloadZip)
 	http.ListenAndServe(":8080", nil)
 }
