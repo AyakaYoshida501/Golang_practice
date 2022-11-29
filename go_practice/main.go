@@ -295,6 +295,59 @@ func downloadZip(w http.ResponseWriter, r *http.Request) {
 	// io.Copy(httpWriter, strings.Reader("donwloaded")) //cannot convert "donwloaded" (untyped string constant) to type strings.Reader
 	io.WriteString(httpWriter, "downloaded")
 }
+
+//CopyN作成...コピーするバイト数を指定できる
+/*
+writeSize, err := io.CopyN(writer, reader, size) 指定したサイズだけコピー
+1 ファイル作成 and バッファで読み込む分作成
+2 読み込み and write NewWrite(作成したファイル)
+*/
+// func copyn() {
+// 	//読み込み元ファイル作成
+// 	copiedFile, err := os.Create("copiedFile.txt")
+// 	if err != nil {
+// 		log.Fatalln("create txt error!")
+// 	}
+// 	// writer := NewWriter("copiedFile.txt")
+// 	// io.WriteString(file, "context in copiedFile.txt\n")
+// 	copiedFile.Write([]byte("context in copiedFile.txt\n")) //writeメソッドが受け取るのはバイト列
+// 	copiedFile.Close()
+
+// 	context, err := os.Open("copiedFile.txt")
+// 	if err != nil {
+// 		log.Fatalln("open file error", err)
+// 	}
+
+// 	//バッファ作成
+// 	buffer := make([]byte, 8)
+// 	toCopy, err := context.Read(buffer)
+// 	if err != nil {
+// 		log.Fatalln("Read file error", err)
+// 	}
+
+	
+// 	copyingFile, err := os.Create("copyingFile.txt")
+// 	if err != nil {
+// 		log.Fatalln("create txt error!")
+// 	}
+// 	defer context.Close()
+
+// 	// reader, err := copiedFile.Read(buffer)
+
+// 	if err != nil {
+// 		log.Fatalln("read txt error!")
+// 	}
+// 	io.Copy(copyingFile, string(toCopy)) //cannot use string(toCopy) (value of type string) as type io.Reader in argument to io.Copy:string does not implement io.Reader (missing Read method)
+// }
+func copyn(w io.Writer, r io.Reader, size int) {
+	buffer := make([]byte, size)
+	_, err := io.ReadFull(r, buffer) //io.ReadFullはサイズを決めて読み込める！！
+	if err != nil {
+		log.Fatalln("read file error!", err)
+	}
+	io.WriteString(w, string(buffer))
+}
+
 func main() {
 	outFile()
 	outCsv()
@@ -306,6 +359,7 @@ func main() {
 	oldNew()
 	randFile()
 	zipFile() 
+	copyn(os.Stdout, strings.NewReader("123456789012345678901234567890"), 8)
 	http.HandleFunc("/", outJSON)
 	http.HandleFunc("/downloadZip", downloadZip)
 	http.ListenAndServe(":8080", nil)
